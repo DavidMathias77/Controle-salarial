@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle Mensal do Salário</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#172033;background:#f3f6fb}
+*{box-sizing:border-box}body{margin:0;padding:22px}
+main{max-width:760px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 8px 30px #14213d12}
+header{display:flex;gap:14px;align-items:center;margin-bottom:22px}
+.logo{background:#e5efff;border-radius:14px;padding:13px;font-size:26px}
+h1{font-size:clamp(1.35rem,4vw,2rem);margin:0 0 5px} .sub{color:#68738a;font-size:.93rem}
+label{display:block;font-weight:700;margin-bottom:8px}
+input{font:inherit;width:100%;padding:12px;border:1px solid #ccd4e0;border-radius:10px;background:#fff;color:#172033}
+input:focus{outline:2px solid #8bb5ff;border-color:#4385ee}
+.salary{background:#f7f9fd;border:1px solid #e0e6ef;border-radius:14px;padding:16px;margin-bottom:22px}
+h2{font-size:1.1rem;margin:0 0 12px}
+table{width:100%;border-collapse:collapse;margin-bottom:18px}
+th,td{text-align:left;padding:10px 7px;border-bottom:1px solid #e8edf4}
+th{font-size:.85rem;color:#657087}
+td:first-child{font-weight:600}td:last-child{width:45%}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.metric{background:#f7f9fd;border-radius:14px;padding:16px}
+.metric small{display:block;color:#68738a;margin-bottom:8px}
+.metric strong{font-size:1.3rem}
+.residual{background:#eaf7ef;border-radius:16px;padding:20px;margin-top:12px}
+.residual.negative{background:#fff0f0}
+.residual small{display:block;font-weight:700;color:#51675a;margin-bottom:8px}
+.residual strong{font-size:clamp(1.8rem,6vw,2.5rem);color:#138044}
+.residual.negative strong{color:#bd2525}
+.track{height:9px;background:#dce4ed;border-radius:20px;overflow:hidden;margin:14px 0 9px}
+.bar{height:100%;background:#20a05a;width:100%;transition:width .15s}
+.negative .bar{background:#d83a3a}
+.note{font-size:.9rem;color:#68738a;line-height:1.45}
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;font-size:.95rem;cursor:pointer}
+.primary{background:#1769e0;color:white}.secondary{background:#eef2f7;color:#27364d}
+footer{font-size:.8rem;color:#7b8495;margin-top:20px}
+@media(max-width:520px){body{padding:10px}main{padding:17px}.summary{grid-template-columns:1fr 1fr}th,td{padding:9px 4px}td:last-child{width:48%}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">💰</div><div><h1>Controle mensal do salário</h1><div class="sub">Orçamento pessoal • Valores em reais (R$)</div></div></header>
+<section class="salary">
+<label for="salary">Salário mensal (R$)</label>
+<input id="salary" type="number" min="0" step="0.01" value="3000" inputmode="decimal">
+</section>
+<h2>Despesas do mês</h2>
+<table><thead><tr><th>Categoria</th><th>Valor gasto (R$)</th></tr></thead>
+<tbody>
+<tr><td>Alimentação</td><td><input class="expense" aria-label="Alimentação" type="number" min="0" step="0.01" value="0" inputmode="decimal"></td></tr>
+<tr><td>Lazer</td><td><input class="expense" aria-label="Lazer" type="number" min="0" step="0.01" value="0" inputmode="decimal"></td></tr>
+<tr><td>Despesas fixas</td><td><input class="expense" aria-label="Despesas fixas" type="number" min="0" step="0.01" value="0" inputmode="decimal"></td></tr>
+<tr><td>Saúde</td><td><input class="expense" aria-label="Saúde" type="number" min="0" step="0.01" value="0" inputmode="decimal"></td></tr>
+<tr><td>Outras despesas</td><td><input class="expense" aria-label="Outras despesas" type="number" min="0" step="0.01" value="0" inputmode="decimal"></td></tr>
+</tbody></table>
+<div class="summary">
+<div class="metric"><small>Total de despesas</small><strong id="total">R$ 0,00</strong></div>
+<div class="metric"><small>Percentual comprometido</small><strong id="percent">0%</strong></div>
+</div>
+<section class="residual" id="residualBox">
+<small>SALDO RESIDUAL DO SALÁRIO</small><strong id="balance">R$ 3.000,00</strong>
+<div class="track"><div class="bar" id="bar"></div></div>
+<div class="note" id="message">Este é o valor que resta após descontar as despesas informadas.</div>
+</section>
+<div class="actions">
+<button class="primary" id="copy">Copiar resumo</button>
+<button class="secondary" id="reset">Zerar valores</button>
+</div>
+<footer>Os cálculos são feitos no seu navegador. Esta página não envia seus valores financeiros para nenhum servidor.</footer>
+</main>
+<script>
+const salary=document.querySelector('#salary');
+const expenses=[...document.querySelectorAll('.expense')];
+const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function calculate(){
+ const income=Math.max(0,Number(salary.value)||0);
+ const values=expenses.map(e=>Math.max(0,Number(e.value)||0));
+ const total=values.reduce((a,b)=>a+b,0), balance=income-total;
+ document.querySelector('#total').textContent=money(total);
+ document.querySelector('#percent').textContent=income>0?(total/income*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%':'—';
+ document.querySelector('#balance').textContent=money(balance);
+ const box=document.querySelector('#residualBox');
+ box.classList.toggle('negative',balance<0);
+ document.querySelector('#bar').style.width=(income>0?Math.max(0,Math.min(100,balance/income*100)):0)+'%';
+ document.querySelector('#message').textContent=balance<0?'Atenção: as despesas ultrapassaram o salário.':balance===0?'Todo o salário foi comprometido.':'Este é o valor que resta após descontar as despesas informadas.';
+}
+salary.addEventListener('input',calculate);expenses.forEach(e=>e.addEventListener('input',calculate));
+document.querySelector('#reset').addEventListener('click',()=>{salary.value='0';expenses.forEach(e=>e.value='0');calculate()});
+document.querySelector('#copy').addEventListener('click',async()=>{
+ const names=['Alimentação','Lazer','Despesas fixas','Saúde','Outras despesas'];
+ const income=Number(salary.value)||0, vals=expenses.map(e=>Number(e.value)||0), total=vals.reduce((a,b)=>a+b,0);
+ const summary=['CONTROLE MENSAL DO SALÁRIO','Salário: '+money(income),...names.map((n,i)=>n+': '+money(vals[i])),'Total de despesas: '+money(total),'Saldo residual: '+money(income-total)].join('\n');
+ try{await navigator.clipboard.writeText(summary);document.querySelector('#copy').textContent='Resumo copiado!';setTimeout(()=>document.querySelector('#copy').textContent='Copiar resumo',1800)}
+ catch(e){prompt('Copie o resumo abaixo:',summary)}
+});
+calculate();
+</script>
+</body></html>
